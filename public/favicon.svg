@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" rx="4" fill="#000000"/>
+  
+  <!-- Underwear/Brief Icon -->
+  <path d="M8 12C8 10.8954 8.89543 10 10 10H22C23.1046 10 24 10.8954 24 12V16C24 17.1046 23.1046 18 22 18H20V20C20 21.1046 19.1046 22 18 22H14C12.8954 22 12 21.1046 12 20V18H10C8.89543 18 8 17.1046 8 16V12Z" fill="#FFFFFF"/>
+  
+  <!-- Waistband detail -->
+  <rect x="8" y="10" width="16" height="3" rx="1.5" fill="#E5E5E5"/>
+  
+  <!-- Side seams -->
+  <line x1="12" y1="18" x2="12" y2="22" stroke="#E5E5E5" stroke-width="1"/>
+  <line x1="20" y1="18" x2="20" y2="22" stroke="#E5E5E5" stroke-width="1"/>
+</svg>
