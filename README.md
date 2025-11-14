@@ -1,6 +1,6 @@
 # RENIS STORE
 
-*Transform Shopping Into Seamless, Effortless Experiences*
+_Transform Shopping Into Seamless, Effortless Experiences_
 
 [![React](https://img.shields.io/badge/React-19.2.0-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.2-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
@@ -44,6 +44,7 @@ This project empowers businesses to create scalable, feature-rich e-commerce web
 ## ✨ Features
 
 ### 🛍️ **Customer Experience**
+
 - **Product Catalog**: Browse products with advanced filtering
 - **Product Details**: Detailed product pages with variants and sizing
 - **Shopping Cart**: Persistent cart with quantity management
@@ -53,6 +54,7 @@ This project empowers businesses to create scalable, feature-rich e-commerce web
 - **Invoice Generation**: Professional PDF invoices
 
 ### 🎛️ **Admin Dashboard**
+
 - **Product Management**: Add, edit, delete products with variants
 - **Order Management**: Track orders, update status, view invoices
 - **Analytics Dashboard**: Visual charts and sales reports
@@ -61,6 +63,7 @@ This project empowers businesses to create scalable, feature-rich e-commerce web
 - **Settings Panel**: Configure payment methods and store settings
 
 ### 🔧 **Technical Features**
+
 - **Responsive Design**: Mobile-first, fully responsive layout
 - **Dark Theme**: Professional black/gray color scheme
 - **Real-time Sync**: Automatic MongoDB synchronization
@@ -73,6 +76,7 @@ This project empowers businesses to create scalable, feature-rich e-commerce web
 ## 🛠️ Tech Stack
 
 ### **Frontend**
+
 - **React 19.2.0** - Modern UI library
 - **TypeScript** - Type-safe development
 - **Vite** - Fast build tool and dev server
@@ -82,6 +86,7 @@ This project empowers businesses to create scalable, feature-rich e-commerce web
 - **jsPDF** - PDF generation
 
 ### **Backend**
+
 - **Node.js** - JavaScript runtime
 - **Express.js** - Web application framework
 - **MongoDB Atlas** - Cloud database
@@ -91,6 +96,7 @@ This project empowers businesses to create scalable, feature-rich e-commerce web
 - **bcryptjs** - Password hashing
 
 ### **Development Tools**
+
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 - **Git** - Version control
@@ -102,6 +108,7 @@ This project empowers businesses to create scalable, feature-rich e-commerce web
 ### Prerequisites
 
 Ensure you have the following installed:
+
 - **Node.js** (v18 or higher)
 - **npm** (v8 or higher)
 - **MongoDB Atlas** account (or local MongoDB)
@@ -110,32 +117,36 @@ Ensure you have the following installed:
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/madhesh04/Renis-Store.git
    cd Renis-Store
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
-   
+
    Create a `.env` file in the root directory:
+
    ```env
    # Email Configuration
    EMAIL_USER=your-gmail@gmail.com
    EMAIL_PASS=your-app-password
-   
+
    # Database Configuration
    MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/renis-store
-   
+
    # Security
    JWT_SECRET=your-super-secret-jwt-key
    ```
 
 4. **Gmail App Password Setup**
+
    - Enable 2-Factor Authentication on your Gmail account
    - Generate an App Password for "Mail"
    - Use the 16-character password in `EMAIL_PASS`
@@ -149,11 +160,13 @@ Ensure you have the following installed:
 ### Running the Application
 
 1. **Start the backend server**
+
    ```bash
    npm run server
    ```
 
 2. **Start the frontend development server**
+
    ```bash
    npm start
    ```
@@ -164,6 +177,7 @@ Ensure you have the following installed:
    - **Backend API**: http://localhost:3001
 
 ### Default Admin Credentials
+
 - **Username**: `admin`
 - **Password**: `admin123`
 
@@ -215,21 +229,25 @@ renis-store/
 ## 🔌 API Documentation
 
 ### **Products**
+
 - `GET /api/products` - Get all products
 - `POST /api/products` - Create new product
 - `PUT /api/products/:id` - Update product
 - `DELETE /api/products/:id` - Delete product
 
 ### **Orders**
+
 - `GET /api/orders` - Get all orders
 - `POST /api/orders` - Create new order
 - `PUT /api/orders/:id` - Update order status
 
 ### **Admin**
+
 - `POST /api/admin/login` - Admin authentication
 - `POST /api/sync-data` - Sync local data to database
 
 ### **Email**
+
 - `POST /api/send-email` - Send contact form email
 - `POST /api/send-invoice` - Send invoice via email
 
@@ -240,24 +258,28 @@ renis-store/
 The admin dashboard provides comprehensive store management:
 
 ### **Dashboard**
+
 - Sales analytics with interactive charts
 - Key performance indicators (KPIs)
 - Recent orders and top products
 - Low stock alerts
 
 ### **Product Management**
+
 - Add new products with variants and sizing
 - Edit product details and pricing
 - Manage inventory and stock levels
 - Upload product images
 
 ### **Order Management**
+
 - View all customer orders
 - Update order and payment status
 - Generate and download invoices
 - Track order fulfillment
 
 ### **Analytics**
+
 - Revenue trends and growth charts
 - Product performance metrics
 - Category distribution analysis
@@ -285,6 +307,7 @@ We welcome contributions to RENIS Store! Please follow these steps:
 5. **Open a Pull Request**
 
 ### Development Guidelines
+
 - Follow TypeScript best practices
 - Maintain consistent code formatting
 - Write meaningful commit messages
@@ -312,6 +335,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support and questions:
+
 - **Email**: madheshp42@gmail.com
 - **GitHub Issues**: [Create an issue](https://github.com/madhesh04/Renis-Store/issues)
 
@@ -321,6 +345,6 @@ For support and questions:
 
 **Built with ❤️ by [Madhesh](https://github.com/madhesh04)**
 
-*RENIS Store - Premium Comfort Since 2018*
+_RENIS Store - Premium Comfort Since 2018_
 
 </div>

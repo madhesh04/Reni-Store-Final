@@ -3,6 +3,10 @@ import nodemailer from 'nodemailer';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { body, validationResult } from 'express-validator';
+import morgan from 'morgan';
 import Product from './models/Product.js';
 import Order from './models/Order.js';
 import Admin from './models/Admin.js';
@@ -14,8 +18,31 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+// Security Middleware
+app.use(helmet());
+app.use(morgan('combined'));
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use(limiter);
+
+// Stricter rate limiting for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5, // limit each IP to 5 login attempts per 15 minutes
+  message: 'Too many login attempts, please try again later.'
+});
+
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? 'https://yourdomain.com' : 'http://localhost:5173',
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/renis-store')
@@ -139,8 +166,39 @@ app.post('/api/send-email', async (req, res) => {
   }
 });
 
+// Create new admin user (for development/setup only)
+app.post('/api/admin/create', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    
+    // Check if admin already exists
+    const existingAdmin = await Admin.findOne({ $or: [{ username }, { email }] });
+    if (existingAdmin) {
+      return res.status(400).json({ error: 'Admin already exists' });
+    }
+    
+    const newAdmin = new Admin({
+      username,
+      email,
+      password // Will be hashed automatically by the pre-save middleware
+    });
+    
+    await newAdmin.save();
+    res.status(201).json({ message: 'Admin created successfully', username });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Admin Authentication Routes
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin/login', authLimiter, [
+  body('username').isLength({ min: 3 }).trim().escape(),
+  body('password').isLength({ min: 6 })
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     const { username, password } = req.body;
     const admin = await Admin.findOne({ username });
@@ -180,7 +238,7 @@ const verifyAdmin = async (req, res, next) => {
   }
 };
 
-// Product API Routes
+// Product API Routes (Public)
 app.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find();
@@ -190,7 +248,7 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', verifyAdmin, async (req, res) => {
   try {
     const product = new Product(req.body);
     await product.save();
@@ -200,7 +258,7 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', verifyAdmin, async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(product);
@@ -209,7 +267,7 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', verifyAdmin, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: 'Product deleted' });
@@ -219,7 +277,7 @@ app.delete('/api/products/:id', async (req, res) => {
 });
 
 // Sync local storage data to database
-app.post('/api/sync-data', async (req, res) => {
+app.post('/api/sync-data', verifyAdmin, async (req, res) => {
   try {
     const { products, orders } = req.body;
     
@@ -263,7 +321,7 @@ app.post('/api/sync-data', async (req, res) => {
 });
 
 // Order API Routes
-app.get('/api/orders', async (req, res) => {
+app.get('/api/orders', verifyAdmin, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
@@ -282,7 +340,7 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-app.put('/api/orders/:id', async (req, res) => {
+app.put('/api/orders/:id', verifyAdmin, async (req, res) => {
   try {
     const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(order);
