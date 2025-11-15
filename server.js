@@ -38,7 +38,7 @@ const authLimiter = rateLimit({
 });
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? 'https://yourdomain.com' : 'http://localhost:5173',
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -106,6 +106,15 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Verify transporter configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Email transporter verification failed:', error);
+  } else {
+    console.log('Email transporter verified successfully');
+  }
+});
+
 app.post('/api/send-invoice', async (req, res) => {
   const { order, invoicePdf } = req.body;
   console.log('Received invoice email request for order:', order.id);
@@ -140,8 +149,23 @@ app.post('/api/send-invoice', async (req, res) => {
 });
 
 app.post('/api/send-email', async (req, res) => {
+  console.log('POST /api/send-email endpoint hit');
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+  
   const { name, email, message } = req.body;
-  console.log('Received email request:', { name, email });
+  
+  // Validate required fields
+  if (!name || !email || !message) {
+    console.log('Missing required fields:', { name: !!name, email: !!email, message: !!message });
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  console.log('Email config check:', {
+    EMAIL_USER: !!process.env.EMAIL_USER,
+    EMAIL_PASS: !!process.env.EMAIL_PASS,
+    EMAIL_USER_VALUE: process.env.EMAIL_USER
+  });
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -157,12 +181,23 @@ app.post('/api/send-email', async (req, res) => {
   };
 
   try {
+    console.log('Attempting to send email...');
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent successfully:', info.messageId);
-    res.status(200).json({ message: 'Email sent successfully' });
+    res.status(200).json({ message: 'Email sent successfully', messageId: info.messageId });
   } catch (error) {
-    console.error('Detailed error:', error);
-    res.status(500).json({ error: 'Failed to send email', details: error.message });
+    console.error('Email sending failed:', error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode
+    });
+    res.status(500).json({ 
+      error: 'Failed to send email', 
+      details: error.message,
+      code: error.code 
+    });
   }
 });
 
