@@ -26,7 +26,7 @@ const ContactPage: React.FC = () => {
 
     try {
       console.log('Sending email with data:', data);
-      const response = await fetch('http://localhost:3001/api/send-email', {
+      const response = await fetch('https://reni-store-final.railway.internal/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -206,7 +206,7 @@ const ProductsView: React.FC<{ products: Product[], setProducts: (p: Product[]) 
             try {
                 const product = products.find(p => p.id === id);
                 if (product) {
-                    await fetch(`http://localhost:3001/api/products/${product._id || id}`, {
+                    await fetch(`https://reni-store-final.railway.internal/api/products/${product._id || id}`, {
                         method: 'DELETE'
                     });
                     console.log('Product deleted from database');
@@ -231,7 +231,7 @@ const ProductsView: React.FC<{ products: Product[], setProducts: (p: Product[]) 
             
             // Auto-sync to database
             try {
-                await fetch('http://localhost:3001/api/sync-data', {
+                await fetch('https://reni-store-final.railway.internal/api/sync-data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ products: updatedProducts, orders: [] })
@@ -361,7 +361,7 @@ const AddProductView: React.FC<{ products: Product[], setProducts: (p: Product[]
         
         // Auto-sync to database
         try {
-            await fetch('http://localhost:3001/api/products', {
+            await fetch('https://reni-store-final.railway.internal/api/products', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newProduct)
@@ -592,7 +592,7 @@ const OrdersView: React.FC<{ orders: Order[], setOrders: (o: Order[]) => void }>
         
         // Auto-sync to database
         try {
-            await fetch('http://localhost:3001/api/sync-data', {
+            await fetch('https://reni-store-final.railway.internal/api/sync-data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ products: [], orders: updatedOrders })
@@ -609,7 +609,7 @@ const OrdersView: React.FC<{ orders: Order[], setOrders: (o: Order[]) => void }>
         
         // Auto-sync to database
         try {
-            await fetch('http://localhost:3001/api/sync-data', {
+            await fetch('https://reni-store-final.railway.internal/api/sync-data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ products: [], orders: updatedOrders })
@@ -732,7 +732,7 @@ const AdminPage: React.FC = () => {
       const localProducts = JSON.parse(localStorage.getItem('renisProducts') || '[]');
       const localOrders = JSON.parse(localStorage.getItem('renisOrders') || '[]');
       
-      const response = await fetch('http://localhost:3001/api/sync-data', {
+      const response = await fetch('https://reni-store-final.railway.internal/api/sync-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ products: localProducts, orders: localOrders })
