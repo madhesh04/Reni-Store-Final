@@ -4,7 +4,7 @@ import { Order, Product, PaymentStatus, OrderStatus } from '../types';
 import { downloadInvoice } from '../utils/invoiceGenerator';
 import {
   Chart as ChartJS,
-  CategoryScale,
+  CategoryScale,    
   LinearScale,
   BarElement,
   LineElement,
@@ -66,20 +66,20 @@ const DashboardView: React.FC<{ orders: Order[], products: Product[] }> = ({ ord
         <div>
             <h2 className="text-2xl font-bold mb-6">Dashboard Overview</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-medium">Total Sales</h3>
+                <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 hover:border-green-500/50 transition-all duration-300">
+                    <h3 className="text-gray-400 text-sm font-medium">💰 Total Sales</h3>
                     <p className="text-3xl font-bold mt-2 text-green-400">${totalSales.toFixed(2)}</p>
                 </div>
-                <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-medium">Total Orders</h3>
+                <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
+                    <h3 className="text-gray-400 text-sm font-medium">📋 Total Orders</h3>
                     <p className="text-3xl font-bold mt-2">{orders.length}</p>
                 </div>
-                <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-medium">Products</h3>
+                <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300">
+                    <h3 className="text-gray-400 text-sm font-medium">📦 Products</h3>
                     <p className="text-3xl font-bold mt-2">{totalProducts}</p>
                 </div>
-                <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-medium">Low Stock</h3>
+                <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 hover:border-red-500/50 transition-all duration-300">
+                    <h3 className="text-gray-400 text-sm font-medium">⚠️ Low Stock</h3>
                     <p className="text-3xl font-bold mt-2 text-red-400">{lowStockProducts}</p>
                 </div>
             </div>
@@ -810,34 +810,64 @@ const AdminPage: React.FC = () => {
   }
 
   const NavItem: React.FC<{ view: AdminView, label: string }> = ({ view, label }) => (
-     <button onClick={() => setActiveView(view)} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeView === view ? 'bg-white text-black' : 'text-gray-300 hover:bg-gray-700'}`}>
+     <button onClick={() => setActiveView(view)} className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${activeView === view ? 'bg-white/20 text-white backdrop-blur-sm' : 'text-gray-300 hover:bg-white/10 hover:text-white'}`}>
         {label}
     </button>
   );
 
   return (
-    <div className="text-white min-h-screen flex">
-      <aside className="w-64 bg-black/50 p-6 flex flex-col">
-        <h1 className="text-2xl font-bold mb-10">RENIS ADMIN</h1>
-        <nav className="flex flex-col space-y-2">
-            <NavItem view="dashboard" label="Dashboard" />
-            <NavItem view="products" label="Products" />
-            <NavItem view="analytics" label="Analytics" />
-            <NavItem view="orders" label="Orders" />
-            <NavItem view="settings" label="Settings" />
+    <div className="text-white min-h-screen flex relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800"></div>
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-white/10 rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 3}s`
+            }}
+          />
+        ))}
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={`float-${i}`}
+            className="absolute w-32 h-32 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full blur-xl animate-bounce"
+            style={{
+              left: `${Math.random() * 80}%`,
+              top: `${Math.random() * 80}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${8 + Math.random() * 4}s`
+            }}
+          />
+        ))}
+      </div>
+      
+      <aside className="w-64 bg-black/30 backdrop-blur-sm p-6 flex flex-col relative z-10 border-r border-gray-700/50">
+        <h1 className="text-2xl font-bold mb-10 text-center">RENIS</h1>
+        <nav className="flex flex-col space-y-3">
+            <NavItem view="dashboard" label="📊 Dashboard" />
+            <NavItem view="products" label="📦 Products" />
+            <NavItem view="analytics" label="📈 Analytics" />
+            <NavItem view="orders" label="🛒 Orders" />
+            <NavItem view="settings" label="⚙️ Settings" />
         </nav>
-        <div className="mt-6 pt-6 border-t border-gray-700">
+        <div className="mt-auto pt-6 border-t border-gray-700/50">
             <button 
                 onClick={syncToDatabase}
-                className="w-full text-left px-4 py-2 rounded-md text-sm font-medium text-blue-400 hover:bg-gray-700"
+                className="w-full text-center px-4 py-3 rounded-lg text-sm font-medium bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition-all duration-300"
             >
-                Sync to Database
+                🔄 Sync Database
             </button>
         </div>
       </aside>
-      <main className="flex-1 bg-gradient-to-b from-[#111111] to-black">
-        <div className="flex justify-end p-4">
-          <button onClick={handleLogout} className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors">
+      
+      <main className="flex-1 relative z-10">
+        <div className="flex justify-end p-6">
+          <button onClick={handleLogout} className="px-6 py-2 bg-red-600/80 backdrop-blur-sm text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-300">
             Logout
           </button>
         </div>
