@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MOCK_PRODUCTS, MOCK_UPI_DETAILS } from '../data/mockData';
-import { Order, Product, PaymentStatus, OrderStatus } from '../types';
+import { Order, Product, PaymentStatus, OrderStatus, ProductCategory, ProductSize } from '../types';
 import { downloadInvoice } from '../utils/invoiceGenerator';
 import {
   Chart as ChartJS,

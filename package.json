@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server.js"
+    "server": "node server.js",
+    "vercel-build": "vite build"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
