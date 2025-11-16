@@ -11,9 +11,9 @@ import Product from './models/Product.js';
 import Order from './models/Order.js';
 import Admin from './models/Admin.js';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,35 +24,48 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
 app.use(morgan('combined'));
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
 
-// Stricter rate limiting for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5, // limit each IP to 5 login attempts per 15 minutes
+  max: 5,
   message: 'Too many login attempts, please try again later.'
 });
 
+// CORS Configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-vercel-app.vercel.app'] 
+    ? ['https://reni-store-final-production.up.railway.app'] 
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files from dist folder
+// Serve static files
 app.use(express.static('dist'));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV 
+  });
+});
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/renis-store')
@@ -62,7 +75,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/renis-sto
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Create default admin user and sync data
+// Create default admin user
 const createDefaultAdmin = async () => {
   try {
     const adminExists = await Admin.findOne({ username: 'admin' });
@@ -84,25 +97,22 @@ const createDefaultAdmin = async () => {
 // Sync mock data to database
 const syncMockDataToDatabase = async () => {
   try {
-    // Import mock data
     const { MOCK_PRODUCTS } = await import('./data/mockData.js');
-    
-    // Sync products
     const existingProducts = await Product.countDocuments();
     if (existingProducts === 0) {
       await Product.insertMany(MOCK_PRODUCTS.map(product => ({
         ...product,
-        _id: undefined // Let MongoDB generate new IDs
+        _id: undefined
       })));
       console.log(`Synced ${MOCK_PRODUCTS.length} products to database`);
     }
-    
     console.log('Database sync completed');
   } catch (error) {
     console.error('Error syncing data to database:', error);
   }
 };
 
+// Email transporter
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
@@ -116,7 +126,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Verify transporter configuration
+// Verify email configuration
 transporter.verify((error, success) => {
   if (error) {
     console.error('Email transporter verification failed:', error);
@@ -125,109 +135,84 @@ transporter.verify((error, success) => {
   }
 });
 
+// Email endpoints
 app.post('/api/send-invoice', async (req, res) => {
-  const { order, invoicePdf } = req.body;
-  console.log('Received invoice email request for order:', order.id);
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: 'madheshp42@gmail.com',
-    subject: `Invoice for Order ${order.id} - Renis Store`,
-    html: `
-      <h3>New Order Invoice</h3>
-      <p><strong>Order ID:</strong> ${order.id}</p>
-      <p><strong>Customer:</strong> ${order.customer.customerName}</p>
-      <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
-      <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
-      <p>Please find the invoice attached.</p>
-    `,
-    attachments: [{
-      filename: `invoice-${order.id}.pdf`,
-      content: invoicePdf.split('base64,')[1],
-      encoding: 'base64'
-    }]
-  };
-
   try {
+    const { order, invoicePdf } = req.body;
+    console.log('Received invoice email request for order:', order.id);
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: 'madheshp42@gmail.com',
+      subject: `Invoice for Order ${order.id} - Renis Store`,
+      html: `
+        <h3>New Order Invoice</h3>
+        <p><strong>Order ID:</strong> ${order.id}</p>
+        <p><strong>Customer:</strong> ${order.customer.customerName}</p>
+        <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
+        <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
+        <p>Please find the invoice attached.</p>
+      `,
+      attachments: [{
+        filename: `invoice-${order.id}.pdf`,
+        content: invoicePdf.split('base64,')[1],
+        encoding: 'base64'
+      }]
+    };
+
     const info = await transporter.sendMail(mailOptions);
     console.log('Invoice email sent successfully:', info.messageId);
     res.status(200).json({ message: 'Invoice email sent successfully' });
   } catch (error) {
-    console.error('Detailed error:', error);
+    console.error('Invoice email error:', error);
     res.status(500).json({ error: 'Failed to send invoice email', details: error.message });
   }
 });
 
 app.post('/api/send-email', async (req, res) => {
-  console.log('POST /api/send-email endpoint hit');
-  console.log('Request body:', req.body);
-  console.log('Request headers:', req.headers);
-  
-  const { name, email, message } = req.body;
-  
-  // Validate required fields
-  if (!name || !email || !message) {
-    console.log('Missing required fields:', { name: !!name, email: !!email, message: !!message });
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  
-  console.log('Email config check:', {
-    EMAIL_USER: !!process.env.EMAIL_USER,
-    EMAIL_PASS: !!process.env.EMAIL_PASS,
-    EMAIL_USER_VALUE: process.env.EMAIL_USER
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: 'madheshp42@gmail.com',
-    subject: `New Contact Form Message from ${name}`,
-    html: `
-      <h3>New Contact Form Submission</h3>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Message:</strong></p>
-      <p>${message}</p>
-    `
-  };
-
   try {
-    console.log('Attempting to send email...');
+    const { name, email, message } = req.body;
+    
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: 'madheshp42@gmail.com',
+      subject: `New Contact Form Message from ${name}`,
+      html: `
+        <h3>New Contact Form Submission</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `
+    };
+
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
+    console.log('Contact email sent successfully:', info.messageId);
     res.status(200).json({ message: 'Email sent successfully', messageId: info.messageId });
   } catch (error) {
-    console.error('Email sending failed:', error);
-    console.error('Error details:', {
-      code: error.code,
-      command: error.command,
-      response: error.response,
-      responseCode: error.responseCode
-    });
+    console.error('Contact email error:', error);
     res.status(500).json({ 
       error: 'Failed to send email', 
-      details: error.message,
-      code: error.code 
+      details: error.message 
     });
   }
 });
 
-// Create new admin user (for development/setup only)
+// Admin routes
 app.post('/api/admin/create', async (req, res) => {
   try {
     const { username, email, password } = req.body;
     
-    // Check if admin already exists
     const existingAdmin = await Admin.findOne({ $or: [{ username }, { email }] });
     if (existingAdmin) {
       return res.status(400).json({ error: 'Admin already exists' });
     }
     
-    const newAdmin = new Admin({
-      username,
-      email,
-      password // Will be hashed automatically by the pre-save middleware
-    });
-    
+    const newAdmin = new Admin({ username, email, password });
     await newAdmin.save();
     res.status(201).json({ message: 'Admin created successfully', username });
   } catch (error) {
@@ -235,16 +220,16 @@ app.post('/api/admin/create', async (req, res) => {
   }
 });
 
-// Admin Authentication Routes
 app.post('/api/admin/login', authLimiter, [
   body('username').isLength({ min: 3 }).trim().escape(),
   body('password').isLength({ min: 6 })
 ], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { username, password } = req.body;
     const admin = await Admin.findOne({ username });
     
@@ -267,7 +252,7 @@ app.post('/api/admin/login', authLimiter, [
   }
 });
 
-// Middleware to verify admin token
+// Admin verification middleware
 const verifyAdmin = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -283,7 +268,7 @@ const verifyAdmin = async (req, res, next) => {
   }
 };
 
-// Product API Routes (Public)
+// Product API Routes
 app.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find();
@@ -359,102 +344,62 @@ app.put('/api/orders/:id', verifyAdmin, async (req, res) => {
   }
 });
 
-// Catch-all handler: send back React's index.html file for SPA routing
+// Catch-all handler for React SPA
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  // Skip API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Renis Store API Server</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .container { max-width: 600px; margin: 0 auto; }
+            .status { color: #28a745; }
+            .endpoint { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 4px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🏪 Renis Store API Server</h1>
+            <p class="status">✅ Server is running successfully!</p>
+            <p>Build the frontend with <code>npm run build</code> to serve the full application.</p>
+            
+            <h3>Available API Endpoints:</h3>
+            <div class="endpoint">GET /api/products - Get all products</div>
+            <div class="endpoint">POST /api/orders - Create new order</div>
+            <div class="endpoint">POST /api/admin/login - Admin login</div>
+            <div class="endpoint">GET /health - Health check</div>
+            
+            <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
+            <p><strong>Port:</strong> ${PORT}</p>
+          </div>
+        </body>
+      </html>
+    `);
+  }
 });
 
+// Error handling middleware
+app.use((error, req, res, next) => {
+  console.error('Server error:', error);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+  });
+});
+
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});uct.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(product);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-app.delete('/api/products/:id', verifyAdmin, async (req, res) => {
-  try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Product deleted' });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Sync local storage data to database
-app.post('/api/sync-data', verifyAdmin, async (req, res) => {
-  try {
-    const { products, orders } = req.body;
-    
-    // Sync products if provided
-    if (products && products.length > 0) {
-      for (const product of products) {
-        await Product.findOneAndUpdate(
-          { name: product.name },
-          product,
-          { upsert: true, new: true }
-        );
-      }
-      console.log(`Synced ${products.length} products`);
-    }
-    
-    // Sync orders if provided
-    if (orders && orders.length > 0) {
-      for (const order of orders) {
-        await Order.findOneAndUpdate(
-          { orderId: order.id },
-          {
-            orderId: order.id,
-            customer: order.customer,
-            items: order.items,
-            total: order.total,
-            orderStatus: order.orderStatus,
-            paymentStatus: order.paymentStatus,
-            createdAt: order.createdAt
-          },
-          { upsert: true, new: true }
-        );
-      }
-      console.log(`Synced ${orders.length} orders`);
-    }
-    
-    res.json({ message: 'Data synced successfully' });
-  } catch (error) {
-    console.error('Sync error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Order API Routes
-app.get('/api/orders', verifyAdmin, async (req, res) => {
-  try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/orders', async (req, res) => {
-  try {
-    const order = new Order(req.body);
-    await order.save();
-    res.status(201).json(order);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-app.put('/api/orders/:id', verifyAdmin, async (req, res) => {
-  try {
-    const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(order);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 });
