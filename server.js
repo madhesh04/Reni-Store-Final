@@ -344,13 +344,14 @@ app.put('/api/orders/:id', verifyAdmin, async (req, res) => {
   }
 });
 
-// Catch-all handler for React SPA
-app.get('*', (req, res) => {
-  // Skip API routes
+// Catch-all handler for React SPA - must be last
+app.use((req, res, next) => {
+  // Handle API 404s
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
 
+  // Serve React app
   const indexPath = path.join(__dirname, 'dist', 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
